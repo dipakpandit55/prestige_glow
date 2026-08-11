@@ -94,10 +94,10 @@
   .logo em{color:var(--gold-light);}
 
   /* ---- animated emblem (used via <use href="#pgLogoMark">) ---- */
-  .logo-mark{ width:42px; height:42px; overflow:visible; flex-shrink:0; }
-  .badge-logo{ width:64px; height:64px; overflow:visible; }
-  .footer-logo{ width:70px; height:70px; overflow:visible; margin-bottom:14px; }
-  .chat-logo{ width:34px; height:34px; overflow:visible; flex-shrink:0; }
+  .logo-mark{ width:58px; height:58px; overflow:visible; flex-shrink:0; }
+  .badge-logo{ width:68px; height:68px; overflow:visible; }
+  .footer-logo{ width:92px; height:92px; overflow:visible; margin-bottom:14px; }
+  .chat-logo{ width:44px; height:44px; overflow:visible; flex-shrink:0; }
 
   .pg-ring{
     animation:pgBreathe 4.5s ease-in-out infinite;
@@ -624,7 +624,7 @@
   }
   .stats .container{
     display:grid;
-    grid-template-columns:repeat(4, 1fr);
+    grid-template-columns:repeat(3, 1fr);
     gap:40px;
   }
   .stat h3{
@@ -1061,7 +1061,7 @@
   @media (max-width: 980px){
     .philosophy .container{grid-template-columns:1fr;}
     .service-grid{grid-template-columns:repeat(2,1fr);}
-    .stats .container{grid-template-columns:repeat(2,1fr); row-gap:36px;}
+    .stats .container{grid-template-columns:repeat(3,1fr); row-gap:36px;}
     .gallery-grid{grid-template-columns:repeat(2,1fr); grid-auto-rows:160px;}
     .gallery-grid .g-item:nth-child(1){grid-column:span 2;grid-row:span 1;}
     .t-grid{grid-template-columns:1fr;}

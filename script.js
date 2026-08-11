@@ -41,17 +41,85 @@
   }, { threshold:.6 });
   counters.forEach(c => counterIO.observe(c));
 
-  // booking form (front-end only demo)
+  // ============ SUPABASE CONNECTION ============
+  let sb = null;
+  try {
+    const SUPABASE_URL = 'https://qiqtytfrvnnxxbzapoyc.supabase.co';
+    const SUPABASE_KEY = 'sb_publishable_Or943UMDfQi0l8Gim6M-jQ_2A6bKgLz';
+    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+  } catch (err) {
+    console.error('Supabase failed to initialize:', err);
+  }
+
+  // booking form — saves submissions into the Supabase "bookings" table
   const form = document.getElementById('bookForm');
   const note = document.getElementById('formNote');
-  form.addEventListener('submit', (e) => {
+  const submitBtn = form.querySelector('.submit-btn');
+
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
-    note.textContent = "Thank you — we'll confirm your appointment by phone shortly.";
-    form.reset();
+
+    if (!sb) {
+      note.textContent = "Booking system is temporarily unavailable — please call or WhatsApp us at +977 9851275855 instead.";
+      return;
+    }
+
+    const originalLabel = submitBtn.textContent;
+    submitBtn.textContent = 'Sending...';
+    submitBtn.disabled = true;
+    note.textContent = '';
+
+    try {
+      const { error } = await sb.from('bookings').insert({
+        client_name: document.getElementById('fname').value,
+        client_phone: document.getElementById('fphone').value,
+        service: document.getElementById('fservice').value,
+        notes: document.getElementById('fnote').value
+      });
+
+      if (error) {
+        console.error('Booking insert failed:', error);
+        note.textContent = "Something went wrong — please call or WhatsApp us at +977 9851275855 instead.";
+      } else {
+        note.textContent = "Thank you — we'll confirm your appointment by phone shortly.";
+        form.reset();
+      }
+    } catch (err) {
+      console.error('Booking insert threw an error:', err);
+      note.textContent = "Something went wrong — please call or WhatsApp us at +977 9851275855 instead.";
+    } finally {
+      submitBtn.textContent = originalLabel;
+      submitBtn.disabled = false;
+    }
   });
+
+  // live services — pulls current prices/descriptions from the "services" table
+  async function loadServices(){
+    if (!sb) return;
+    try {
+      const { data, error } = await sb.from('services').select('*').eq('active', true);
+      if (error || !data) { console.error('Could not load services:', error); return; }
+      const cards = document.querySelectorAll('.service-card');
+      data.forEach(service => {
+        cards.forEach(card => {
+          const h3 = card.querySelector('h3');
+          if (h3 && h3.textContent.trim() === service.name.trim()) {
+            const desc = card.querySelector('p');
+            const price = card.querySelector('.price');
+            if (desc && service.description) desc.textContent = service.description;
+            if (price && service.price_npr) price.textContent = service.price_npr;
+          }
+        });
+      });
+    } catch (err) {
+      console.error('loadServices threw an error:', err);
+    }
+  }
+  loadServices();
 
   // ============ CHAT ASSISTANT ============
   (function(){
+   try {
     const widget = document.getElementById('chatWidget');
     const toggle = document.getElementById('chatToggle');
     const messages = document.getElementById('chatMessages');
@@ -152,4 +220,7 @@
       const btn = e.target.closest('button[data-q]');
       if(btn) handleSend(btn.dataset.q);
     });
+   } catch (err) {
+     console.error('Chat assistant failed to initialize:', err);
+   }
   })();
