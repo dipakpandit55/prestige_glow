@@ -1427,123 +1427,132 @@
 
 <script>
   // header scroll state
-  const header = document.getElementById('siteHeader');
-  window.addEventListener('scroll', () => {
-    header.classList.toggle('scrolled', window.scrollY > 40);
-  }, { passive:true });
+  try {
+    const header = document.getElementById('siteHeader');
+    window.addEventListener('scroll', () => {
+      header.classList.toggle('scrolled', window.scrollY > 40);
+    }, { passive:true });
+  } catch (err) { console.error('Header scroll setup failed:', err); }
 
   // scroll reveal
-  const revealEls = document.querySelectorAll('.reveal');
-  const io = new IntersectionObserver((entries) => {
-    entries.forEach(e => {
-      if(e.isIntersecting){
-        e.target.classList.add('in');
-        io.unobserve(e.target);
-      }
-    });
-  }, { threshold:.15 });
-  revealEls.forEach(el => io.observe(el));
+  try {
+    const revealEls = document.querySelectorAll('.reveal');
+    const io = new IntersectionObserver((entries) => {
+      entries.forEach(e => {
+        if(e.isIntersecting){
+          e.target.classList.add('in');
+          io.unobserve(e.target);
+        }
+      });
+    }, { threshold:.15 });
+    revealEls.forEach(el => io.observe(el));
+  } catch (err) { console.error('Scroll reveal setup failed:', err); }
 
   // animated counters
-  const counters = document.querySelectorAll('.counter');
-  const counterIO = new IntersectionObserver((entries) => {
-    entries.forEach(entry => {
-      if(entry.isIntersecting){
-        const el = entry.target;
-        const target = parseFloat(el.dataset.target);
-        const decimals = parseInt(el.dataset.decimal || '0');
-        const duration = 1600;
-        const start = performance.now();
-        function tick(now){
-          const p = Math.min((now - start) / duration, 1);
-          const eased = 1 - Math.pow(1 - p, 3);
-          const val = target * eased;
-          el.textContent = decimals ? val.toFixed(decimals) : Math.floor(val).toLocaleString();
-          if(p < 1) requestAnimationFrame(tick);
-          else el.textContent = decimals ? target.toFixed(decimals) : target.toLocaleString();
-        }
-        requestAnimationFrame(tick);
-        counterIO.unobserve(el);
-      }
-    });
-  }, { threshold:.6 });
-  counters.forEach(c => counterIO.observe(c));
-
-  // ============ SUPABASE CONNECTION ============
-  let sb = null;
   try {
-    const SUPABASE_URL = 'https://qiqtytfrvnnxxbzapoyc.supabase.co';
-    const SUPABASE_KEY = 'sb_publishable_Or943UMDfQi0l8Gim6M-jQ_2A6bKgLz';
-    sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-  } catch (err) {
-    console.error('Supabase failed to initialize:', err);
-  }
-
-  // booking form — saves submissions into the Supabase "bookings" table
-  const form = document.getElementById('bookForm');
-  const note = document.getElementById('formNote');
-  const submitBtn = form.querySelector('.submit-btn');
-
-  form.addEventListener('submit', async (e) => {
-    e.preventDefault();
-
-    if (!sb) {
-      note.textContent = "Booking system is temporarily unavailable — please call or WhatsApp us at +977 9851275855 instead.";
-      return;
-    }
-
-    const originalLabel = submitBtn.textContent;
-    submitBtn.textContent = 'Sending...';
-    submitBtn.disabled = true;
-    note.textContent = '';
-
-    try {
-      const { error } = await sb.from('bookings').insert({
-        client_name: document.getElementById('fname').value,
-        client_phone: document.getElementById('fphone').value,
-        service: document.getElementById('fservice').value,
-        notes: document.getElementById('fnote').value
-      });
-
-      if (error) {
-        console.error('Booking insert failed:', error);
-        note.textContent = "Something went wrong — please call or WhatsApp us at +977 9851275855 instead.";
-      } else {
-        note.textContent = "Thank you — we'll confirm your appointment by phone shortly.";
-        form.reset();
-      }
-    } catch (err) {
-      console.error('Booking insert threw an error:', err);
-      note.textContent = "Something went wrong — please call or WhatsApp us at +977 9851275855 instead.";
-    } finally {
-      submitBtn.textContent = originalLabel;
-      submitBtn.disabled = false;
-    }
-  });
-
-  // live services — pulls current prices/descriptions from the "services" table
-  async function loadServices(){
-    if (!sb) return;
-    try {
-      const { data, error } = await sb.from('services').select('*').eq('active', true);
-      if (error || !data) { console.error('Could not load services:', error); return; }
-      const cards = document.querySelectorAll('.service-card');
-      data.forEach(service => {
-        cards.forEach(card => {
-          const h3 = card.querySelector('h3');
-          if (h3 && h3.textContent.trim() === service.name.trim()) {
-            const desc = card.querySelector('p');
-            const price = card.querySelector('.price');
-            if (desc && service.description) desc.textContent = service.description;
-            if (price && service.price_npr) price.textContent = service.price_npr;
+    const counters = document.querySelectorAll('.counter');
+    const counterIO = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if(entry.isIntersecting){
+          const el = entry.target;
+          const target = parseFloat(el.dataset.target);
+          const decimals = parseInt(el.dataset.decimal || '0');
+          const duration = 1600;
+          const start = performance.now();
+          function tick(now){
+            const p = Math.min((now - start) / duration, 1);
+            const eased = 1 - Math.pow(1 - p, 3);
+            const val = target * eased;
+            el.textContent = decimals ? val.toFixed(decimals) : Math.floor(val).toLocaleString();
+            if(p < 1) requestAnimationFrame(tick);
+            else el.textContent = decimals ? target.toFixed(decimals) : target.toLocaleString();
           }
-        });
+          requestAnimationFrame(tick);
+          counterIO.unobserve(el);
+        }
       });
+    }, { threshold:.6 });
+    counters.forEach(c => counterIO.observe(c));
+  } catch (err) { console.error('Counter setup failed:', err); }
+
+  // ============ SUPABASE CONNECTION + BOOKING FORM + SERVICES ============
+  try {
+    let sb = null;
+    try {
+      const SUPABASE_URL = 'https://qiqtytfrvnnxxbzapoyc.supabase.co';
+      const SUPABASE_KEY = 'sb_publishable_Or943UMDfQi0l8Gim6M-jQ_2A6bKgLz';
+      sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
     } catch (err) {
-      console.error('loadServices threw an error:', err);
+      console.error('Supabase failed to initialize:', err);
     }
+
+    const form = document.getElementById('bookForm');
+    const note = document.getElementById('formNote');
+
+    if (form && note) {
+      const submitBtn = form.querySelector('.submit-btn');
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        if (!sb) {
+          note.textContent = "Booking system is temporarily unavailable — please call or WhatsApp us at +977 9851275855 instead.";
+          return;
+        }
+
+        const originalLabel = submitBtn ? submitBtn.textContent : '';
+        if (submitBtn) { submitBtn.textContent = 'Sending...'; submitBtn.disabled = true; }
+        note.textContent = '';
+
+        try {
+          const { error } = await sb.from('bookings').insert({
+            client_name: document.getElementById('fname').value,
+            client_phone: document.getElementById('fphone').value,
+            service: document.getElementById('fservice').value,
+            notes: document.getElementById('fnote').value
+          });
+
+          if (error) {
+            console.error('Booking insert failed:', error);
+            note.textContent = "Something went wrong — please call or WhatsApp us at +977 9851275855 instead.";
+          } else {
+            note.textContent = "Thank you — we'll confirm your appointment by phone shortly.";
+            form.reset();
+          }
+        } catch (err) {
+          console.error('Booking insert threw an error:', err);
+          note.textContent = "Something went wrong — please call or WhatsApp us at +977 9851275855 instead.";
+        } finally {
+          if (submitBtn) { submitBtn.textContent = originalLabel; submitBtn.disabled = false; }
+        }
+      });
+    }
+
+    async function loadServices(){
+      if (!sb) return;
+      try {
+        const { data, error } = await sb.from('services').select('*').eq('active', true);
+        if (error || !data) { console.error('Could not load services:', error); return; }
+        const cards = document.querySelectorAll('.service-card');
+        data.forEach(service => {
+          cards.forEach(card => {
+            const h3 = card.querySelector('h3');
+            if (h3 && h3.textContent.trim() === service.name.trim()) {
+              const desc = card.querySelector('p');
+              const price = card.querySelector('.price');
+              if (desc && service.description) desc.textContent = service.description;
+              if (price && service.price_npr) price.textContent = service.price_npr;
+            }
+          });
+        });
+      } catch (err) {
+        console.error('loadServices threw an error:', err);
+      }
+    }
+    loadServices();
+  } catch (err) {
+    console.error('Booking/Supabase block failed:', err);
   }
-  loadServices();
 
   // ============ CHAT ASSISTANT ============
   (function(){
