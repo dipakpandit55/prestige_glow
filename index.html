@@ -1425,6 +1425,40 @@
   </div>
 </footer>
 
+<!-- ============ CHAT ASSISTANT ============ -->
+<div class="chat-widget" id="chatWidget">
+  <div class="chat-panel">
+    <div class="chat-header">
+      <svg class="chat-logo" viewBox="0 0 120 120"><use href="#pgLogoMark"></use></svg>
+      <div>
+        <div class="h-name">Glow Assistant</div>
+        <div class="h-status">Online now</div>
+      </div>
+    </div>
+    <div class="chat-messages" id="chatMessages">
+      <div class="msg bot">Namaste! I'm the Prestige Glow assistant. Ask me about services, prices, hours, or how to book — I'm happy to help. ✨</div>
+    </div>
+    <div class="chat-quick" id="chatQuick">
+      <button data-q="What services do you offer?">Services</button>
+      <button data-q="What are your prices?">Prices</button>
+      <button data-q="What are your hours?">Hours</button>
+      <button data-q="Where are you located?">Location</button>
+      <button data-q="How do I book an appointment?">Book</button>
+    </div>
+    <div class="chat-input-row">
+      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
+      <button class="chat-send" id="chatSend" aria-label="Send message">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
+      </button>
+    </div>
+  </div>
+  <button class="chat-toggle" id="chatToggle" aria-label="Open chat assistant">
+    <span class="dot"></span>
+    <svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-8.5 8.5 8.4 8.4 0 01-3.5-.75L3 21l1.85-5.06A8.4 8.4 0 013.5 11.5 8.5 8.5 0 0112 3a8.5 8.5 0 019 8.5z"/></svg>
+    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
+  </button>
+</div>
+
 <script>
   // header scroll state
   try {
@@ -1662,40 +1696,6 @@
    }
   })();
 </script>
-
-<!-- ============ CHAT ASSISTANT ============ -->
-<div class="chat-widget" id="chatWidget">
-  <div class="chat-panel">
-    <div class="chat-header">
-      <svg class="chat-logo" viewBox="0 0 120 120"><use href="#pgLogoMark"></use></svg>
-      <div>
-        <div class="h-name">Glow Assistant</div>
-        <div class="h-status">Online now</div>
-      </div>
-    </div>
-    <div class="chat-messages" id="chatMessages">
-      <div class="msg bot">Namaste! I'm the Prestige Glow assistant. Ask me about services, prices, hours, or how to book — I'm happy to help. ✨</div>
-    </div>
-    <div class="chat-quick" id="chatQuick">
-      <button data-q="What services do you offer?">Services</button>
-      <button data-q="What are your prices?">Prices</button>
-      <button data-q="What are your hours?">Hours</button>
-      <button data-q="Where are you located?">Location</button>
-      <button data-q="How do I book an appointment?">Book</button>
-    </div>
-    <div class="chat-input-row">
-      <input type="text" id="chatInput" placeholder="Type a message..." autocomplete="off">
-      <button class="chat-send" id="chatSend" aria-label="Send message">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2L11 13M22 2l-7 20-4-9-9-4z"/></svg>
-      </button>
-    </div>
-  </div>
-  <button class="chat-toggle" id="chatToggle" aria-label="Open chat assistant">
-    <span class="dot"></span>
-    <svg class="icon-chat" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M21 11.5a8.5 8.5 0 01-8.5 8.5 8.4 8.4 0 01-3.5-.75L3 21l1.85-5.06A8.4 8.4 0 013.5 11.5 8.5 8.5 0 0112 3a8.5 8.5 0 019 8.5z"/></svg>
-    <svg class="icon-close" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 6L6 18M6 6l12 12"/></svg>
-  </button>
-</div>
 
 </body>
 </html>
