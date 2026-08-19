@@ -1,0 +1,838 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Prestige Glow — Point of Sale</title>
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,500;0,9..144,600&family=Manrope:wght@400;500;600;700&family=Jost:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+  :root{
+    --ink:#1c1116;
+    --plum:#2c1620;
+    --plum-light:#3c1f2c;
+    --rose:#cf8791;
+    --rose-deep:#a85f6c;
+    --gold:#c9a05e;
+    --gold-light:#e8cf9c;
+    --cream:#faf5f1;
+    --cream-deep:#f1e5db;
+    --text-dark:#2a1a20;
+    --text-muted:#7a656b;
+    --text-cream-muted:#d9c6c1;
+    --line:rgba(42,26,32,.12);
+    --radius:2px;
+    --ease:cubic-bezier(.22,1,.36,1);
+  }
+  *{margin:0;padding:0;box-sizing:border-box;}
+  html{background:var(--cream);}
+  body{
+    font-family:'Manrope', sans-serif;
+    background:var(--cream);
+    color:var(--text-dark);
+    -webkit-font-smoothing:antialiased;
+    min-height:100vh;
+  }
+  img,svg{display:block;max-width:100%;}
+  ul{list-style:none;}
+  button{font-family:inherit;cursor:pointer;border:none;background:none;}
+  input,select,textarea{font-family:inherit;}
+  h1,h2,h3,h4{font-family:'Fraunces', serif;font-weight:500;line-height:1.1;letter-spacing:-.01em;}
+  em{font-style:italic;font-weight:400;}
+  .eyebrow{
+    font-family:'Jost', sans-serif;text-transform:uppercase;
+    letter-spacing:.28em;font-size:.68rem;font-weight:500;color:var(--gold);
+  }
+  a:focus-visible, button:focus-visible, input:focus-visible, select:focus-visible{
+    outline:2px solid var(--gold);outline-offset:2px;
+  }
+  .muted{color:var(--text-muted);}
+
+  /* ---------- buttons ---------- */
+  .btn{
+    display:inline-flex;align-items:center;justify-content:center;gap:8px;
+    font-family:'Jost',sans-serif;font-size:.82rem;letter-spacing:.08em;
+    text-transform:uppercase;padding:13px 22px;border-radius:var(--radius);
+    transition:transform .3s var(--ease), background .3s var(--ease), color .3s var(--ease), opacity .3s var(--ease);
+  }
+  .btn-gold{background:var(--gold);color:var(--ink);}
+  .btn-gold:hover{background:var(--gold-light);}
+  .btn-dark{background:var(--ink);color:var(--cream);}
+  .btn-dark:hover{background:var(--plum-light);}
+  .btn-ghost{background:transparent;color:var(--text-dark);border:1px solid var(--line);}
+  .btn-ghost:hover{background:var(--cream-deep);}
+  .btn:disabled{opacity:.5;cursor:not-allowed;}
+  .btn-block{width:100%;}
+
+  .field label{
+    display:block;font-family:'Jost',sans-serif;font-size:.72rem;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--text-muted);margin-bottom:7px;
+  }
+  .field input, .field select{
+    width:100%;padding:12px 14px;border:1px solid var(--line);
+    border-radius:var(--radius);background:#fff;color:var(--text-dark);font-size:.95rem;
+  }
+  .field input:focus, .field select:focus{outline:none;border-color:var(--gold);}
+
+  /* ============ LOGIN ============ */
+  .login-wrap{
+    min-height:100vh;display:flex;align-items:center;justify-content:center;padding:24px;
+    background:radial-gradient(circle at 30% 20%, var(--plum-light), var(--ink) 70%);
+  }
+  .login-card{
+    width:100%;max-width:400px;background:var(--cream);
+    border-radius:var(--radius);padding:44px 38px;
+    box-shadow:0 30px 80px rgba(0,0,0,.4);
+  }
+  .brand{display:flex;align-items:center;gap:10px;margin-bottom:28px;}
+  .brand .dot{width:38px;height:38px;border-radius:50%;flex-shrink:0;
+    background:radial-gradient(circle at 35% 30%, var(--gold-light), var(--gold) 55%, var(--rose-deep));}
+  .brand .name{font-family:'Fraunces',serif;font-size:1.3rem;}
+  .brand .name em{color:var(--rose-deep);}
+  .login-card h1{font-size:1.7rem;margin:6px 0 4px;}
+  .login-card .sub{color:var(--text-muted);font-size:.9rem;margin-bottom:26px;}
+  .login-card .field{margin-bottom:16px;}
+  .form-note{font-size:.85rem;margin-top:14px;min-height:1.2em;}
+  .form-note.err{color:#b4293b;}
+  .form-note.ok{color:var(--rose-deep);}
+
+  /* ============ APP SHELL ============ */
+  .app{display:none;min-height:100vh;flex-direction:column;}
+  .app.active{display:flex;}
+  .topbar{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 26px;background:var(--ink);color:var(--cream);
+    position:sticky;top:0;z-index:20;flex-wrap:wrap;
+  }
+  .topbar .brand .name{color:var(--cream);}
+  .topbar-actions{display:flex;align-items:center;gap:10px;flex-wrap:wrap;}
+  .who{font-size:.82rem;color:var(--text-cream-muted);margin-right:4px;}
+  .seg{display:flex;border:1px solid rgba(233,207,156,.35);border-radius:var(--radius);overflow:hidden;}
+  .seg button{
+    padding:9px 16px;font-family:'Jost',sans-serif;font-size:.76rem;letter-spacing:.08em;
+    text-transform:uppercase;color:var(--text-cream-muted);background:transparent;
+  }
+  .seg button.active{background:var(--gold);color:var(--ink);}
+
+  .view{flex:1;display:none;}
+  .view.active{display:block;}
+
+  /* ============ REGISTER (POS) ============ */
+  .register{
+    display:grid;grid-template-columns:1fr 400px;gap:0;
+    align-items:stretch;min-height:calc(100vh - 60px);
+  }
+  .catalog{padding:26px 26px 60px;}
+  .catalog-head{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:20px;flex-wrap:wrap;}
+  .catalog-head h2{font-size:1.5rem;}
+  .catalog-tools{display:flex;gap:10px;flex-wrap:wrap;}
+  .search{
+    padding:11px 14px;border:1px solid var(--line);border-radius:var(--radius);
+    background:#fff;min-width:220px;font-size:.9rem;
+  }
+  .search:focus{outline:none;border-color:var(--gold);}
+
+  .prod-grid{
+    display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));
+    gap:1px;background:var(--line);border:1px solid var(--line);
+  }
+  .prod{
+    background:var(--cream-deep);padding:20px 18px;text-align:left;
+    display:flex;flex-direction:column;gap:10px;min-height:118px;
+    transition:background .3s var(--ease), transform .3s var(--ease);
+  }
+  .prod:hover{background:#fff;transform:translateY(-1px);z-index:2;}
+  .prod .pname{font-family:'Fraunces',serif;font-size:1.06rem;color:var(--text-dark);}
+  .prod .pprice{
+    margin-top:auto;font-family:'Jost',sans-serif;font-size:.78rem;
+    letter-spacing:.08em;color:var(--rose-deep);
+  }
+  .prod .add{
+    align-self:flex-start;font-family:'Jost',sans-serif;font-size:.68rem;
+    letter-spacing:.12em;text-transform:uppercase;color:var(--gold);
+    border-top:1px solid rgba(201,160,94,.4);padding-top:8px;
+  }
+  .empty{padding:50px 10px;text-align:center;color:var(--text-muted);}
+
+  /* ---------- cart ---------- */
+  .cart{
+    background:var(--plum);color:var(--cream);display:flex;flex-direction:column;
+    position:sticky;top:60px;height:calc(100vh - 60px);
+  }
+  .cart-head{padding:22px 24px 14px;border-bottom:1px solid rgba(233,207,156,.16);}
+  .cart-head h3{font-size:1.25rem;color:var(--cream);}
+  .cart-head .eyebrow{color:var(--gold-light);}
+  .cart-items{flex:1;overflow-y:auto;padding:8px 24px;}
+  .line{
+    display:grid;grid-template-columns:1fr auto;gap:6px 12px;
+    padding:14px 0;border-bottom:1px solid rgba(233,207,156,.12);
+  }
+  .line .ln-name{font-size:.95rem;color:var(--cream);}
+  .line .ln-price{font-size:.78rem;color:var(--text-cream-muted);margin-top:3px;}
+  .line .ln-total{font-variant-numeric:tabular-nums;text-align:right;color:var(--gold-light);font-weight:600;}
+  .qty{display:flex;align-items:center;gap:10px;margin-top:8px;}
+  .qty button{
+    width:26px;height:26px;border-radius:50%;border:1px solid rgba(233,207,156,.4);
+    color:var(--gold-light);font-size:1rem;line-height:1;display:flex;align-items:center;justify-content:center;
+  }
+  .qty button:hover{background:rgba(233,207,156,.15);}
+  .qty span{min-width:22px;text-align:center;font-variant-numeric:tabular-nums;}
+  .void{
+    justify-self:end;align-self:end;font-family:'Jost',sans-serif;font-size:.66rem;
+    letter-spacing:.1em;text-transform:uppercase;color:var(--rose);
+  }
+  .void:hover{color:#fff;}
+  .cart-empty{padding:40px 6px;text-align:center;color:var(--text-cream-muted);font-size:.9rem;}
+
+  .cart-foot{padding:16px 24px 22px;border-top:1px solid rgba(233,207,156,.2);background:var(--plum-light);}
+  .adj{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .adj .field label{color:var(--text-cream-muted);}
+  .adj .field input, .adj .field select{
+    background:rgba(0,0,0,.2);border:1px solid rgba(233,207,156,.28);color:var(--cream);padding:9px 11px;font-size:.88rem;
+  }
+  .disc-row{display:grid;grid-template-columns:96px 1fr;gap:8px;}
+  .tax-row{display:flex;align-items:center;gap:9px;margin:4px 0 12px;}
+  .tax-row input[type=checkbox]{width:17px;height:17px;accent-color:var(--gold);}
+  .tax-row label{font-size:.85rem;color:var(--text-cream-muted);}
+  .totals{font-size:.9rem;}
+  .totals .row{display:flex;justify-content:space-between;padding:5px 0;color:var(--text-cream-muted);}
+  .totals .row.grand{
+    border-top:1px solid rgba(233,207,156,.3);margin-top:6px;padding-top:12px;
+    color:var(--cream);font-size:1.05rem;
+  }
+  .totals .row.grand strong{font-family:'Fraunces',serif;font-size:1.6rem;color:var(--gold-light);font-weight:500;}
+  .totals .row span:last-child{font-variant-numeric:tabular-nums;}
+  .pay-btn{margin-top:16px;}
+
+  /* ============ HISTORY ============ */
+  .history{padding:28px 26px 60px;max-width:1100px;margin:0 auto;}
+  .hist-head{display:flex;align-items:flex-end;justify-content:space-between;gap:20px;margin-bottom:22px;flex-wrap:wrap;}
+  .hist-head h2{font-size:1.7rem;}
+  .kpis{display:flex;gap:14px;flex-wrap:wrap;}
+  .kpi{background:var(--ink);color:var(--cream);padding:16px 22px;border-radius:var(--radius);min-width:150px;}
+  .kpi .k-label{font-family:'Jost',sans-serif;font-size:.68rem;letter-spacing:.14em;text-transform:uppercase;color:var(--text-cream-muted);}
+  .kpi .k-val{font-family:'Fraunces',serif;font-size:1.7rem;color:var(--gold-light);margin-top:5px;}
+  .hist-controls{display:flex;align-items:center;gap:10px;margin-bottom:16px;flex-wrap:wrap;}
+  .table-wrap{border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:#fff;}
+  table{width:100%;border-collapse:collapse;font-size:.9rem;}
+  thead th{
+    text-align:left;font-family:'Jost',sans-serif;font-size:.7rem;letter-spacing:.1em;
+    text-transform:uppercase;color:var(--text-muted);padding:14px 16px;background:var(--cream-deep);
+  }
+  tbody td{padding:14px 16px;border-top:1px solid var(--line);vertical-align:top;}
+  tbody tr:hover{background:var(--cream);}
+  td.num{text-align:right;font-variant-numeric:tabular-nums;}
+  .tag{
+    display:inline-block;font-family:'Jost',sans-serif;font-size:.66rem;letter-spacing:.08em;
+    text-transform:uppercase;padding:4px 9px;border-radius:20px;background:var(--cream-deep);color:var(--text-muted);
+  }
+  .link-btn{color:var(--rose-deep);font-family:'Jost',sans-serif;font-size:.74rem;letter-spacing:.06em;text-transform:uppercase;}
+  .link-btn:hover{color:var(--gold);}
+
+  /* ============ MODAL / RECEIPT ============ */
+  .overlay{
+    position:fixed;inset:0;background:rgba(28,17,22,.55);backdrop-filter:blur(3px);
+    display:none;align-items:center;justify-content:center;padding:20px;z-index:200;
+  }
+  .overlay.active{display:flex;}
+  .modal{
+    background:#fff;width:100%;max-width:420px;border-radius:var(--radius);
+    max-height:92vh;overflow-y:auto;box-shadow:0 30px 80px rgba(0,0,0,.4);
+  }
+  .modal-pad{padding:26px 28px;}
+  .modal h3{font-size:1.35rem;margin-bottom:4px;}
+
+  /* receipt */
+  .receipt{padding:28px 30px;color:#1c1116;font-size:.9rem;}
+  .receipt .r-brand{text-align:center;margin-bottom:14px;}
+  .receipt .r-brand .r-name{font-family:'Fraunces',serif;font-size:1.5rem;}
+  .receipt .r-brand .r-sub{font-family:'Jost',sans-serif;font-size:.7rem;letter-spacing:.18em;text-transform:uppercase;color:#7a656b;margin-top:3px;}
+  .receipt .r-meta{font-size:.78rem;color:#7a656b;text-align:center;margin-bottom:16px;line-height:1.5;}
+  .receipt .r-line{display:flex;justify-content:space-between;gap:10px;padding:4px 0;}
+  .receipt .r-items{border-top:1px dashed #c9b6ad;border-bottom:1px dashed #c9b6ad;padding:10px 0;margin:8px 0;}
+  .receipt .r-items .r-line span:first-child{max-width:70%;}
+  .receipt .r-tot{padding-top:8px;}
+  .receipt .r-grand{display:flex;justify-content:space-between;font-family:'Fraunces',serif;font-size:1.3rem;margin-top:8px;padding-top:10px;border-top:2px solid #1c1116;}
+  .receipt .r-thanks{text-align:center;margin-top:18px;font-family:'Fraunces',serif;font-style:italic;color:#a85f6c;}
+  .num-tab{font-variant-numeric:tabular-nums;}
+
+  .modal-actions{display:flex;gap:10px;padding:0 28px 26px;}
+
+  /* add-item modal */
+  #itemModal .field{margin-bottom:14px;}
+
+  @media (max-width:960px){
+    .register{grid-template-columns:1fr;}
+    .cart{position:static;height:auto;}
+    .cart-items{max-height:340px;}
+  }
+  @media (max-width:520px){
+    .adj{grid-template-columns:1fr;}
+  }
+
+  /* ============ PRINT ============ */
+  @media print{
+    body *{visibility:hidden;}
+    #receiptPrintable, #receiptPrintable *{visibility:visible;}
+    #receiptPrintable{position:absolute;left:0;top:0;width:100%;box-shadow:none;}
+    .modal-actions{display:none !important;}
+  }
+</style>
+</head>
+<body>
+
+  <!-- ================= LOGIN ================= -->
+  <div class="login-wrap" id="loginWrap">
+    <form class="login-card" id="loginForm">
+      <div class="brand"><span class="dot"></span><span class="name">Prestige <em>Glow</em></span></div>
+      <p class="eyebrow">Staff Terminal</p>
+      <h1>Point of Sale</h1>
+      <p class="sub">Sign in with your staff account to open the register.</p>
+      <div class="field">
+        <label for="email">Email</label>
+        <input type="email" id="email" autocomplete="username" required placeholder="you@prestigeglow.com">
+      </div>
+      <div class="field">
+        <label for="password">Password</label>
+        <input type="password" id="password" autocomplete="current-password" required placeholder="••••••••">
+      </div>
+      <button type="submit" class="btn btn-dark btn-block" id="loginBtn">Sign In</button>
+      <p class="form-note" id="loginNote" role="status" aria-live="polite"></p>
+    </form>
+  </div>
+
+  <!-- ================= APP ================= -->
+  <div class="app" id="app">
+    <div class="topbar">
+      <div class="brand"><span class="dot"></span><span class="name">Prestige <em>Glow</em> — POS</span></div>
+      <div class="topbar-actions">
+        <div class="seg">
+          <button id="tabRegister" class="active">Register</button>
+          <button id="tabHistory">Sales History</button>
+        </div>
+        <span class="who" id="whoami"></span>
+        <button class="btn btn-ghost" id="logoutBtn" style="color:var(--cream);border-color:rgba(233,207,156,.35);">Log Out</button>
+      </div>
+    </div>
+
+    <!-- ---------- REGISTER VIEW ---------- -->
+    <section class="view active" id="viewRegister">
+      <div class="register">
+        <div class="catalog">
+          <div class="catalog-head">
+            <div>
+              <p class="eyebrow">Menu</p>
+              <h2>Services &amp; Products</h2>
+            </div>
+            <div class="catalog-tools">
+              <input type="search" class="search" id="prodSearch" placeholder="Search…" aria-label="Search services">
+              <button class="btn btn-ghost" id="addItemBtn">+ Custom Item</button>
+            </div>
+          </div>
+          <div class="prod-grid" id="prodGrid"></div>
+          <p class="empty" id="prodEmpty" style="display:none;">No services loaded. Use “+ Custom Item” to ring up a sale.</p>
+        </div>
+
+        <aside class="cart">
+          <div class="cart-head">
+            <p class="eyebrow">Current Sale</p>
+            <h3 id="cartCount">Cart</h3>
+          </div>
+          <div class="cart-items" id="cartItems">
+            <p class="cart-empty" id="cartEmpty">Cart is empty. Tap a service to add it.</p>
+          </div>
+          <div class="cart-foot">
+            <div class="adj">
+              <div class="field">
+                <label>Discount</label>
+                <div class="disc-row">
+                  <select id="discType">
+                    <option value="percent">%</option>
+                    <option value="amount">NPR</option>
+                  </select>
+                  <input type="number" id="discValue" min="0" step="0.01" value="0" inputmode="decimal">
+                </div>
+              </div>
+              <div class="field">
+                <label>Payment</label>
+                <select id="payMethod">
+                  <option value="cash">Cash</option>
+                  <option value="card">Card</option>
+                  <option value="esewa">eSewa</option>
+                  <option value="khalti">Khalti</option>
+                </select>
+              </div>
+            </div>
+            <div class="tax-row">
+              <input type="checkbox" id="taxToggle">
+              <label for="taxToggle">Add VAT (13%)</label>
+            </div>
+            <div class="totals">
+              <div class="row"><span>Subtotal</span><span id="tSub">NPR 0</span></div>
+              <div class="row" id="rowDisc" style="display:none;"><span>Discount</span><span id="tDisc">– NPR 0</span></div>
+              <div class="row" id="rowTax" style="display:none;"><span>VAT (13%)</span><span id="tTax">NPR 0</span></div>
+              <div class="row grand"><span>Total</span><strong id="tGrand">NPR 0</strong></div>
+            </div>
+            <button class="btn btn-gold btn-block pay-btn" id="checkoutBtn" disabled>Complete Sale</button>
+          </div>
+        </aside>
+      </div>
+    </section>
+
+    <!-- ---------- HISTORY VIEW ---------- -->
+    <section class="view" id="viewHistory">
+      <div class="history">
+        <div class="hist-head">
+          <div>
+            <p class="eyebrow">Records</p>
+            <h2>Sales History</h2>
+          </div>
+          <div class="kpis">
+            <div class="kpi"><div class="k-label">Today — Sales</div><div class="k-val" id="kToday">NPR 0</div></div>
+            <div class="kpi"><div class="k-label">Today — Transactions</div><div class="k-val" id="kCount">0</div></div>
+          </div>
+        </div>
+        <div class="hist-controls">
+          <div class="field" style="margin:0;">
+            <label style="margin-bottom:4px;">Date</label>
+            <input type="date" id="histDate">
+          </div>
+          <button class="btn btn-ghost" id="histRefresh" style="align-self:flex-end;">Refresh</button>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th><th>Items</th><th>Customer</th><th>Payment</th>
+                <th class="num">Total</th><th></th>
+              </tr>
+            </thead>
+            <tbody id="histBody">
+              <tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">Loading…</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ================= ADD CUSTOM ITEM MODAL ================= -->
+  <div class="overlay" id="itemModal">
+    <div class="modal">
+      <div class="modal-pad">
+        <p class="eyebrow">Add to cart</p>
+        <h3>Custom Item</h3>
+        <p class="muted" style="font-size:.85rem;margin:4px 0 18px;">For a service or product not in the menu.</p>
+        <form id="itemForm">
+          <div class="field">
+            <label for="ciName">Item name</label>
+            <input type="text" id="ciName" required placeholder="e.g. Bridal touch-up">
+          </div>
+          <div class="field">
+            <label for="ciPrice">Price (NPR)</label>
+            <input type="number" id="ciPrice" min="0" step="0.01" required inputmode="decimal" placeholder="0">
+          </div>
+          <div class="field">
+            <label for="ciQty">Quantity</label>
+            <input type="number" id="ciQty" min="1" step="1" value="1" inputmode="numeric">
+          </div>
+        </form>
+      </div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-block" id="itemCancel">Cancel</button>
+        <button class="btn btn-dark btn-block" id="itemAdd">Add Item</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ================= RECEIPT MODAL ================= -->
+  <div class="overlay" id="receiptModal">
+    <div class="modal" id="receiptPrintable">
+      <div class="receipt" id="receiptBody"><!-- filled by JS --></div>
+      <div class="modal-actions">
+        <button class="btn btn-ghost btn-block" id="receiptClose">New Sale</button>
+        <button class="btn btn-gold btn-block" id="receiptPrint">Print</button>
+      </div>
+    </div>
+  </div>
+
+<script>
+(function(){
+  'use strict';
+
+  // ---------- Supabase (same project as the main site) ----------
+  const SUPABASE_URL = 'https://qiqtytfrvnnxxbzapoyc.supabase.co';
+  const SUPABASE_KEY = 'sb_publishable_Or943UMDfQi0l8Gim6M-jQ_2A6bKgLz';
+  let sb = null;
+  try { sb = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY); }
+  catch(err){ console.error('[v0] Supabase init failed:', err); }
+
+  const VAT_RATE = 13; // %
+  const $ = (id) => document.getElementById(id);
+
+  // ---------- helpers ----------
+  const fmt = (n) => 'NPR ' + Math.round((Number(n)||0)).toLocaleString('en-IN');
+  const fmt2 = (n) => 'NPR ' + (Number(n)||0).toLocaleString('en-IN', {minimumFractionDigits:0, maximumFractionDigits:2});
+  function parsePrice(v){
+    if (typeof v === 'number') return v;
+    const n = String(v||'').replace(/[^0-9.]/g,'');
+    return parseFloat(n) || 0;
+  }
+
+  // ---------- state ----------
+  let cart = [];        // {name, price, qty}
+  let catalog = [];     // {name, price}
+  let currentUser = null;
+
+  // ==========================================================
+  //  AUTH
+  // ==========================================================
+  const loginWrap = $('loginWrap');
+  const app = $('app');
+  const loginForm = $('loginForm');
+  const loginNote = $('loginNote');
+  const loginBtn = $('loginBtn');
+
+  function showApp(user){
+    currentUser = user;
+    $('whoami').textContent = user?.email || '';
+    loginWrap.style.display = 'none';
+    app.classList.add('active');
+    loadCatalog();
+  }
+  function showLogin(){
+    currentUser = null;
+    app.classList.remove('active');
+    loginWrap.style.display = 'flex';
+  }
+
+  if (sb){
+    sb.auth.getSession().then(({data}) => {
+      if (data.session) showApp(data.session.user);
+      else showLogin();
+    }).catch(() => showLogin());
+    sb.auth.onAuthStateChange((_e, session) => {
+      if (session) showApp(session.user); else showLogin();
+    });
+  } else {
+    loginNote.textContent = 'Cannot reach the booking system right now. Please try again later.';
+    loginNote.className = 'form-note err';
+  }
+
+  loginForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!sb) return;
+    loginNote.textContent = ''; loginNote.className = 'form-note';
+    loginBtn.disabled = true; const lbl = loginBtn.textContent; loginBtn.textContent = 'Signing in…';
+    try {
+      const { error } = await sb.auth.signInWithPassword({
+        email: $('email').value.trim(),
+        password: $('password').value
+      });
+      if (error){
+        loginNote.textContent = error.message || 'Invalid email or password.';
+        loginNote.className = 'form-note err';
+      }
+    } catch(err){
+      console.error('[v0] login error', err);
+      loginNote.textContent = 'Something went wrong signing in.';
+      loginNote.className = 'form-note err';
+    } finally {
+      loginBtn.disabled = false; loginBtn.textContent = lbl;
+    }
+  });
+
+  $('logoutBtn').addEventListener('click', async () => {
+    if (sb) await sb.auth.signOut();
+    cart = []; renderCart();
+    showLogin();
+  });
+
+  // ==========================================================
+  //  CATALOG
+  // ==========================================================
+  async function loadCatalog(){
+    const grid = $('prodGrid');
+    if (!sb){ $('prodEmpty').style.display='block'; return; }
+    try {
+      const { data, error } = await sb.from('services').select('*').eq('active', true);
+      if (error) throw error;
+      catalog = (data||[]).map(s => ({ name:(s.name||'').trim(), price: parsePrice(s.price_npr) }))
+                          .filter(s => s.name);
+      catalog.sort((a,b)=>a.name.localeCompare(b.name));
+    } catch(err){
+      console.error('[v0] loadCatalog failed', err);
+      catalog = [];
+    }
+    renderCatalog();
+  }
+
+  function renderCatalog(){
+    const grid = $('prodGrid');
+    const q = ($('prodSearch').value||'').toLowerCase().trim();
+    const list = catalog.filter(s => !q || s.name.toLowerCase().includes(q));
+    grid.innerHTML = '';
+    if (!catalog.length){ $('prodEmpty').style.display='block'; return; }
+    $('prodEmpty').style.display = 'none';
+    if (!list.length){
+      grid.innerHTML = '<p class="empty" style="grid-column:1/-1;">No matches.</p>';
+      return;
+    }
+    list.forEach(s => {
+      const b = document.createElement('button');
+      b.className = 'prod';
+      b.innerHTML = `<span class="pname">${escapeHtml(s.name)}</span>
+                     <span class="pprice">${s.price ? fmt(s.price) : 'Set price'}</span>
+                     <span class="add">Add +</span>`;
+      b.addEventListener('click', () => addToCart(s.name, s.price));
+      grid.appendChild(b);
+    });
+  }
+  $('prodSearch').addEventListener('input', renderCatalog);
+
+  function escapeHtml(str){
+    return String(str).replace(/[&<>"']/g, c => (
+      {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]
+    ));
+  }
+
+  // ==========================================================
+  //  CART
+  // ==========================================================
+  function addToCart(name, price, qty){
+    qty = qty || 1;
+    const existing = cart.find(i => i.name === name && i.price === price);
+    if (existing) existing.qty += qty;
+    else cart.push({ name, price: Number(price)||0, qty });
+    renderCart();
+  }
+  function changeQty(idx, delta){
+    const item = cart[idx]; if (!item) return;
+    item.qty += delta;
+    if (item.qty <= 0) cart.splice(idx,1);
+    renderCart();
+  }
+  function voidLine(idx){ cart.splice(idx,1); renderCart(); }
+
+  function calcTotals(){
+    const subtotal = cart.reduce((s,i)=> s + i.price*i.qty, 0);
+    const dType = $('discType').value;
+    let dVal = parseFloat($('discValue').value) || 0;
+    if (dVal < 0) dVal = 0;
+    let discount = dType === 'percent' ? subtotal * (dVal/100) : dVal;
+    discount = Math.min(discount, subtotal);
+    const taxed = $('taxToggle').checked;
+    const base = subtotal - discount;
+    const tax = taxed ? base * (VAT_RATE/100) : 0;
+    const total = base + tax;
+    return { subtotal, dType, dVal, discount, taxed, tax, total };
+  }
+
+  function renderCart(){
+    const wrap = $('cartItems');
+    const count = cart.reduce((s,i)=>s+i.qty,0);
+    $('cartCount').textContent = count ? `Cart · ${count} item${count>1?'s':''}` : 'Cart';
+    if (!cart.length){
+      wrap.innerHTML = '<p class="cart-empty" id="cartEmpty">Cart is empty. Tap a service to add it.</p>';
+    } else {
+      wrap.innerHTML = '';
+      cart.forEach((i, idx) => {
+        const row = document.createElement('div');
+        row.className = 'line';
+        row.innerHTML = `
+          <div>
+            <div class="ln-name">${escapeHtml(i.name)}</div>
+            <div class="ln-price">${fmt(i.price)} each</div>
+            <div class="qty">
+              <button aria-label="Decrease" data-act="dec">−</button>
+              <span>${i.qty}</span>
+              <button aria-label="Increase" data-act="inc">+</button>
+            </div>
+          </div>
+          <div class="ln-total">${fmt(i.price*i.qty)}</div>
+          <button class="void" data-act="void">Void</button>`;
+        row.querySelector('[data-act=dec]').addEventListener('click', ()=>changeQty(idx,-1));
+        row.querySelector('[data-act=inc]').addEventListener('click', ()=>changeQty(idx, 1));
+        row.querySelector('[data-act=void]').addEventListener('click', ()=>voidLine(idx));
+        wrap.appendChild(row);
+      });
+    }
+    // totals
+    const t = calcTotals();
+    $('tSub').textContent = fmt(t.subtotal);
+    $('rowDisc').style.display = t.discount > 0 ? 'flex' : 'none';
+    $('tDisc').textContent = '– ' + fmt(t.discount);
+    $('rowTax').style.display = t.taxed ? 'flex' : 'none';
+    $('tTax').textContent = fmt(t.tax);
+    $('tGrand').textContent = fmt(t.total);
+    $('checkoutBtn').disabled = cart.length === 0;
+  }
+
+  ['discType','discValue','taxToggle'].forEach(id => {
+    $(id).addEventListener('input', renderCart);
+    $(id).addEventListener('change', renderCart);
+  });
+
+  // ---------- add custom item ----------
+  const itemModal = $('itemModal');
+  $('addItemBtn').addEventListener('click', ()=>{
+    $('ciName').value=''; $('ciPrice').value=''; $('ciQty').value='1';
+    itemModal.classList.add('active'); $('ciName').focus();
+  });
+  $('itemCancel').addEventListener('click', ()=> itemModal.classList.remove('active'));
+  itemModal.addEventListener('click', (e)=>{ if(e.target===itemModal) itemModal.classList.remove('active'); });
+  $('itemAdd').addEventListener('click', ()=>{
+    const name = $('ciName').value.trim();
+    const price = parseFloat($('ciPrice').value)||0;
+    const qty = Math.max(1, parseInt($('ciQty').value)||1);
+    if (!name){ $('ciName').focus(); return; }
+    addToCart(name, price, qty);
+    itemModal.classList.remove('active');
+  });
+  $('itemForm').addEventListener('submit', (e)=>{ e.preventDefault(); $('itemAdd').click(); });
+
+  // ==========================================================
+  //  CHECKOUT
+  // ==========================================================
+  const checkoutBtn = $('checkoutBtn');
+  checkoutBtn.addEventListener('click', async ()=>{
+    if (!cart.length || !sb) return;
+    const t = calcTotals();
+    checkoutBtn.disabled = true; const lbl = checkoutBtn.textContent; checkoutBtn.textContent = 'Saving…';
+    const payMethod = $('payMethod').value;
+    const record = {
+      staff_email: currentUser?.email || null,
+      customer_name: null,
+      customer_phone: null,
+      items: cart.map(i => ({ name:i.name, price:i.price, qty:i.qty })),
+      subtotal: round2(t.subtotal),
+      discount_type: t.discount > 0 ? t.dType : null,
+      discount_value: t.discount > 0 ? t.dVal : 0,
+      discount_amount: round2(t.discount),
+      tax_rate: t.taxed ? VAT_RATE : 0,
+      tax_amount: round2(t.tax),
+      total: round2(t.total),
+      payment_method: payMethod
+    };
+    try {
+      const { data, error } = await sb.from('sales').insert(record).select().single();
+      if (error) throw error;
+      showReceipt(data || { ...record, created_at:new Date().toISOString() });
+      // reset sale
+      cart = []; $('discValue').value = '0'; $('taxToggle').checked = false; renderCart();
+    } catch(err){
+      console.error('[v0] checkout failed', err);
+      alert('Could not save the sale: ' + (err.message || 'unknown error') + '\n\nMake sure the "sales" table exists (see supabase-pos-setup.sql).');
+    } finally {
+      checkoutBtn.disabled = false; checkoutBtn.textContent = lbl;
+    }
+  });
+  function round2(n){ return Math.round((Number(n)||0)*100)/100; }
+
+  // ==========================================================
+  //  RECEIPT
+  // ==========================================================
+  const receiptModal = $('receiptModal');
+  function showReceipt(sale){
+    const d = new Date(sale.created_at || Date.now());
+    const items = (sale.items||[]).map(i =>
+      `<div class="r-line"><span>${escapeHtml(i.name)} ×${i.qty}</span><span class="num-tab">${fmt(i.price*i.qty)}</span></div>`
+    ).join('');
+    const payLabel = { cash:'Cash', card:'Card', esewa:'eSewa', khalti:'Khalti' }[sale.payment_method] || sale.payment_method || '';
+    $('receiptBody').innerHTML = `
+      <div class="r-brand">
+        <div class="r-name">Prestige Glow</div>
+        <div class="r-sub">Radiance, Redefined</div>
+      </div>
+      <div class="r-meta">
+        Kathmandu, Nepal · +977 9851275855<br>
+        ${d.toLocaleDateString()} · ${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}<br>
+        Served by ${escapeHtml(sale.staff_email || '')}
+      </div>
+      <div class="r-items">${items}</div>
+      <div class="r-tot">
+        <div class="r-line"><span>Subtotal</span><span class="num-tab">${fmt(sale.subtotal)}</span></div>
+        ${Number(sale.discount_amount)>0 ? `<div class="r-line"><span>Discount</span><span class="num-tab">– ${fmt(sale.discount_amount)}</span></div>`:''}
+        ${Number(sale.tax_amount)>0 ? `<div class="r-line"><span>VAT (${sale.tax_rate}%)</span><span class="num-tab">${fmt(sale.tax_amount)}</span></div>`:''}
+      </div>
+      <div class="r-grand"><span>Total</span><span class="num-tab">${fmt(sale.total)}</span></div>
+      <div class="r-line" style="margin-top:8px;color:#7a656b;font-size:.82rem;"><span>Paid via</span><span>${escapeHtml(payLabel)}</span></div>
+      <div class="r-thanks">Thank you — glow on.</div>`;
+    receiptModal.classList.add('active');
+  }
+  $('receiptClose').addEventListener('click', ()=> receiptModal.classList.remove('active'));
+  $('receiptPrint').addEventListener('click', ()=> window.print());
+
+  // ==========================================================
+  //  TABS / HISTORY
+  // ==========================================================
+  $('tabRegister').addEventListener('click', ()=> switchView('register'));
+  $('tabHistory').addEventListener('click', ()=> switchView('history'));
+  function switchView(name){
+    const reg = name==='register';
+    $('tabRegister').classList.toggle('active', reg);
+    $('tabHistory').classList.toggle('active', !reg);
+    $('viewRegister').classList.toggle('active', reg);
+    $('viewHistory').classList.toggle('active', !reg);
+    if (!reg) loadHistory();
+  }
+
+  const histDate = $('histDate');
+  histDate.value = new Date().toISOString().slice(0,10);
+  $('histRefresh').addEventListener('click', loadHistory);
+  histDate.addEventListener('change', loadHistory);
+
+  async function loadHistory(){
+    const body = $('histBody');
+    if (!sb){ body.innerHTML = row6('Unavailable'); return; }
+    const day = histDate.value || new Date().toISOString().slice(0,10);
+    const start = new Date(day + 'T00:00:00');
+    const end = new Date(day + 'T00:00:00'); end.setDate(end.getDate()+1);
+    body.innerHTML = row6('Loading…');
+    try {
+      const { data, error } = await sb.from('sales')
+        .select('*')
+        .gte('created_at', start.toISOString())
+        .lt('created_at', end.toISOString())
+        .order('created_at', { ascending:false });
+      if (error) throw error;
+      const sales = data || [];
+      const total = sales.reduce((s,r)=> s + (Number(r.total)||0), 0);
+      $('kToday').textContent = fmt(total);
+      $('kCount').textContent = sales.length;
+      if (!sales.length){ body.innerHTML = row6('No sales for this day.'); return; }
+      body.innerHTML = '';
+      sales.forEach(sale => {
+        const d = new Date(sale.created_at);
+        const itemCount = (sale.items||[]).reduce((s,i)=>s+(i.qty||0),0);
+        const preview = (sale.items||[]).map(i=>i.name).slice(0,2).join(', ')
+          + ((sale.items||[]).length>2 ? '…' : '');
+        const tr = document.createElement('tr');
+        tr.innerHTML = `
+          <td>${d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'})}</td>
+          <td>${escapeHtml(preview||'—')}<div class="muted" style="font-size:.78rem;">${itemCount} item${itemCount!==1?'s':''}</div></td>
+          <td>${escapeHtml(sale.customer_name||'—')}</td>
+          <td><span class="tag">${escapeHtml(sale.payment_method||'')}</span></td>
+          <td class="num">${fmt(sale.total)}</td>
+          <td><button class="link-btn" data-act="view">Receipt</button></td>`;
+        tr.querySelector('[data-act=view]').addEventListener('click', ()=> showReceipt(sale));
+        body.appendChild(tr);
+      });
+    } catch(err){
+      console.error('[v0] loadHistory failed', err);
+      body.innerHTML = row6('Could not load sales. Ensure the "sales" table exists.');
+    }
+  }
+  function row6(msg){
+    return `<tr><td colspan="6" style="padding:40px;text-align:center;color:var(--text-muted);">${escapeHtml(msg)}</td></tr>`;
+  }
+
+  // init empty cart
+  renderCart();
+})();
+</script>
+</body>
+</html>
