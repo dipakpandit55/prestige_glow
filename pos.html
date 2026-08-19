@@ -188,6 +188,15 @@
   .cart-empty{padding:40px 6px;text-align:center;color:var(--text-cream-muted);font-size:.9rem;}
 
   .cart-foot{padding:16px 24px 22px;border-top:1px solid rgba(233,207,156,.2);background:var(--plum-light);}
+  .cust-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
+  .cust-row .field label{color:var(--text-cream-muted);}
+  .cust-row .field label .opt{color:var(--text-cream-muted);opacity:.6;letter-spacing:.06em;text-transform:none;}
+  .cust-row .field input{
+    background:rgba(0,0,0,.2);border:1px solid rgba(233,207,156,.28);color:var(--cream);padding:9px 11px;font-size:.88rem;
+    width:100%;border-radius:var(--radius);
+  }
+  .cust-row .field input::placeholder{color:var(--text-cream-muted);opacity:.55;}
+  .cust-row .field input:focus{outline:none;border-color:var(--gold);}
   .adj{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;}
   .adj .field label{color:var(--text-cream-muted);}
   .adj .field input, .adj .field select{
@@ -345,6 +354,16 @@
             <p class="cart-empty" id="cartEmpty">Cart is empty. Tap a service to add it.</p>
           </div>
           <div class="cart-foot">
+            <div class="cust-row">
+              <div class="field">
+                <label for="custName">Customer <span class="opt">(optional)</span></label>
+                <input type="text" id="custName" placeholder="Name" autocomplete="off">
+              </div>
+              <div class="field">
+                <label for="custPhone">Phone <span class="opt">(optional)</span></label>
+                <input type="tel" id="custPhone" placeholder="98••••••••" autocomplete="off" inputmode="tel">
+              </div>
+            </div>
             <div class="adj">
               <div class="field">
                 <label>Discount</label>
@@ -703,10 +722,12 @@
     const t = calcTotals();
     checkoutBtn.disabled = true; const lbl = checkoutBtn.textContent; checkoutBtn.textContent = 'Saving…';
     const payMethod = $('payMethod').value;
+    const custName = $('custName').value.trim();
+    const custPhone = $('custPhone').value.trim();
     const record = {
       staff_email: currentUser?.email || null,
-      customer_name: null,
-      customer_phone: null,
+      customer_name: custName || null,
+      customer_phone: custPhone || null,
       items: cart.map(i => ({ name:i.name, price:i.price, qty:i.qty })),
       subtotal: round2(t.subtotal),
       discount_type: t.discount > 0 ? t.dType : null,
